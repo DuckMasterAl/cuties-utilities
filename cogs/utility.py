@@ -6,6 +6,29 @@ class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_slash_command_error(self, ctx: SlashContext, error):
+        embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
+        await ctx.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.bot_has_permissions(manage_emojis=True)
+    @commands.has_permissions(manage_emojis=True)
+    async def emote(self, ctx, name, *, role: discord.Role):
+        """ Create an emoji with limited role access.
+        Make sure to attach the image of the emoji you want to create! """
+        if ctx.message.attachments == []:
+            return await ctx.reply('You didn\'t attach an image for me to upload!')
+        image = await ctx.message.attachments[0].read()
+        emoji = await ctx.guild.create_custom_emoji(name=name, image=image, roles=[role], reason=f'{ctx.author.name} told me to do the thing, so I did the thing!')
+        await ctx.send(f"Created the emoji ({emoji}) and limited it to users with the {role.mention} role.\n*Note: You may not see the emoji because I don\'t have permission to use it myself!*")
+
+
     @cog_ext.cog_slash(
         description='Get a role!',
         options=[{
@@ -79,9 +102,12 @@ class Utility(commands.Cog):
     @commands.command()
     async def privacy(self, ctx):
         """ View the Privacy Policy """
-        embed = discord.Embed(title="Privacy Policy", description=f"By using {self.bot.user.name}, you agree to the following Privacy Policy.", color=discord.Color.blue())
-        embed.add_field(name='What information is stored?', value='Currently, no information is stored.', inline=False)
+        embed = discord.Embed(title="Privacy Policy", description=f"By using {self.bot.user.name}, you agree to the following Privacy Policy.\nYou understand that this policy may update at any time, and you continue to agree to it even if you\'re not notified about the changes.", color=discord.Color.blue())
+        embed.add_field(name='What information is stored?', value='We store all server invite codes and their use count.', inline=False)
+        embed.add_field(name='Why we store the information and how we use it.', value='We store this information for invite logging.', inline=False)
+        embed.add_field(name='Who gets this data?', value='Only bot developers get access to this data.', inline=False)
         embed.add_field(name='Questions and Concerns.', value='If you are concerned about the data stored, please [email us.](https://quacky.xyz/email?email=duck@bduck.xyz)', inline=False)
+        embed.add_field(name='How to Remove your data.', value='If you would like us to remove your data, please [email us.](https://quacky.xyz/email?email=duck@bduck.xyz)', inline=False)
         embed.set_footer(text='Last updated on 05/24/2021')
         await ctx.send(embed=embed)
 

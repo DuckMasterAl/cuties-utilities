@@ -2,3 +2,5 @@ enhanced-dpy
 aiohttp
 jishaku
 discord-py-slash-command
+motor
+dnspython
