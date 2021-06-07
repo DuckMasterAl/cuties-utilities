@@ -28,6 +28,40 @@ class Utility(commands.Cog):
         emoji = await ctx.guild.create_custom_emoji(name=name, image=image, roles=[role], reason=f'{ctx.author.name} told me to do the thing, so I did the thing!')
         await ctx.send(f"Created the emoji ({emoji}) and limited it to users with the {role.mention} role.\n*Note: You may not see the emoji because I don\'t have permission to use it myself!*")
 
+    @cog_ext.cog_slash(
+        description='Bean a user!',
+        options=[
+                {
+                    "name": "user",
+                    "description": "The user you want to bean.",
+                    "type": 6,
+                    "required": True
+                },
+                {
+                    "name": "reason",
+                    "description": "The reason you're beaning the user.",
+                    "type": 3,
+                    "required": False
+                }
+            ]
+        )
+    @commands.guild_only()
+    async def bean(self, ctx, user, reason=None):
+        role = ctx.guild.get_role(773123881284272141)# boost
+        role2 = ctx.guild.get_role(804036444502753331)# staff
+        member = ctx.guild.get_member(ctx.author.id)
+        if role2 not in member.roles and role not in member.roles and ctx.author.id != self.bot.owner_id:
+            return await ctx.send(f'<:foxban:826881101951402044> You must be a **Server Booster** to be able to hold the bean hammer!')
+        if user.id == self.bot.user.id:
+            embed = discord.Embed(description=f'I\'ve beaned **{ctx.author.display_name}** for trying to bean me <:catgun:805686505631907890>', color=discord.Color.red())
+            embed.set_thumbnail(url='https://duck-is-super-cool.elixi.re/i/s8si.png?raw=true')
+            return await ctx.send(embed=embed)
+        embed = discord.Embed(description=f'**{user.display_name}** has been beaned by **{ctx.author.display_name}**', color=discord.Color.red())
+        embed.set_thumbnail(url='https://duck-is-super-cool.elixi.re/i/zn9z.gif?raw=true')
+        if reason is not None:
+            embed.description += f'\n**Reason:** {reason}'
+        m = await ctx.send(embed=embed)
+        await m.add_reaction(self.bot.get_emoji(826881101951402044))# fox ban
 
     @cog_ext.cog_slash(
         description='Get a role!',
