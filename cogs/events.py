@@ -1,11 +1,25 @@
-import discord
-from discord.ext import commands
+import discord, datetime
+from discord.ext import commands, tasks
 
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.logchannel = 846837457189208145
         self.guild_id = 767344022980132884
+        self.seriouschat = 848215416702631977
+        self.clear_serious_chat.start()
+
+    def cog_unload(self):
+        self.clear_serious_chat.cancel()
+
+    @tasks.loop(hours=1)
+    async def clear_serious_chat(self):
+        channel = self.bot.get_channel(self.seriouschat)
+        def is_pinned(m):
+            if not m.pinned:
+                return True
+            return False
+        await channel.purge(limit=None, before=(datetime.datetime.now() - datetime.timedelta(days=7)), check=is_pinned)
 
     @commands.Cog.listener()
     async def on_ready(self):
