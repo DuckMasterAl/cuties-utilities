@@ -65,6 +65,17 @@ class Events(commands.Cog):
         await self.bot.db.invites.find_one_and_update({"code": invite.code}, {"$inc": {"uses": -1}})
 
     @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        if before.roles == after.roles:
+            return
+        boost_role = after.guild.get_role(773123881284272141)
+        if boost_role in before.roles and boost_role not in after.roles:
+            color_roles = [855494471592312882, 855494453787361302, 856284563474874379, 856284568931008562, 855494506055729192, 855494521651724330, 847169928707571782, 856284567320002580, 856285250459402261, 856284565580808252, 856285998644461570, 856285997494697994, 856284555232149514]
+            for x in [x.id for x in before.roles]:
+                if x in color_roles:
+                    await after.remove_roles(after.guild.get_role(x), reason='Unboosted the server :(')
+
+    @commands.Cog.listener()
     async def on_invite_create(self, invite):
         await self.bot.db.invites.insert_one({"code": invite.code, "uses": 0})
         channel = self.bot.get_channel(self.logchannel)
