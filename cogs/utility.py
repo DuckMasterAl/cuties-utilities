@@ -1,4 +1,4 @@
-import discord, aiohttp
+import discord, aiohttp, io, emoji, math, asyncio
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 
@@ -15,6 +15,105 @@ class Utility(commands.Cog):
     async def on_command_error(self, ctx, error):
         embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def emojilist(self, ctx):
+        emojis = await self.bot.db.emojis.find().to_list(None)
+        emojis = sorted(emojis, key=lambda k: k['uses'], reverse=True)
+        msg = []
+        num = 0
+        total_uses = 0
+        for x in emojis:
+            num += 1
+            total_uses += int(x['uses'])
+            if x['id'] in emoji.UNICODE_EMOJI['en']:
+                emoji_name = x['id']
+            else:
+                e = self.bot.get_emoji(int(x['id']))
+                if e is None:
+                    emoji_name = f'[Unknown](https://cdn.discordapp.com/emojis/{x["id"]}.{"gif" if x["animated"] else "png"})'
+                else:
+                    emoji_name = str(e)
+            msg.append(f"**{num}.** {emoji_name} | {x['uses']} Use{'' if x['uses'] == 1 else 's'}")
+
+        list_page = 0
+        page = 1
+        page_total = math.ceil(len(msg) / 10)
+        embed_description = []
+        for a in range(page_total):
+            if msg != []:
+                embed_description.append('\n'.join(msg[:10]))
+                msg = msg[10:]
+        embed = discord.Embed(title=f'Emoji Leaderboard ({total_uses} Total)', description=embed_description[0], color=discord.Colour.blue())
+        embed.set_footer(text=f'Page {page}/{page_total} • Change Pages via Reactions')
+        loading_embed = discord.Embed(title='Loading Menu...', color=discord.Color.dark_yellow())
+        m = await ctx.send(embed=loading_embed)
+        await m.add_reaction('\U00002b05')# left
+        await m.add_reaction('\U000023f9')# stop
+        await m.add_reaction('\U000027a1')# right
+        await m.edit(embed=embed)
+        while True:
+            def reaction_check(reaction, user):
+                if ctx.author == user and reaction.emoji in ['\U00002b05', '\U000023f9', '\U000027a1'] and reaction.message.id == m.id:
+                    return True
+                return False
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=90.0, check=reaction_check)
+            except asyncio.TimeoutError:
+                embed.set_footer(text=f'Page {page}/{page_total} • Menu Timed out')
+                embed.color = discord.Color.greyple()
+                await m.edit(embed=embed)
+                try:
+                    await m.clear_reactions()
+                except:
+                    pass
+            else:
+                if reaction.emoji == '\U00002b05':# left
+                    if list_page - 1 != -1:
+                        list_page -= 1
+                        page -= 1
+                        embed.description = embed_description[list_page]
+                        embed.set_footer(text=f'Page {page}/{page_total} • Change Pages via Reactions')
+                        await m.edit(embed=embed)
+                    try:
+                        await m.remove_reaction('\U00002b05', user)
+                    except:
+                        pass
+                elif reaction.emoji == '\U000027a1':# right
+                    if list_page + 1 <= page_total - 1:
+                        list_page += 1
+                        page += 1
+                        embed.description = embed_description[list_page]
+                        embed.set_footer(text=f'Page {page}/{page_total} • Change Pages via Reactions')
+                        await m.edit(embed=embed)
+                    try:
+                        await m.remove_reaction('\U000027a1', user)
+                    except:
+                        pass
+                elif reaction.emoji == '\U000023f9':# stop
+                    embed.set_footer(text=f'Page {page}/{page_total} • Menu Closed')
+                    embed.color = discord.Color.greyple()
+                    await m.edit(embed=embed)
+                    try:
+                        await m.clear_reactions()
+                    except:
+                        pass
+
+    @commands.command()
+    @commands.bot_has_permissions(manage_emojis=True)
+    @commands.has_permissions(manage_emojis=True)
+    async def steal(self, ctx, *, emojis):
+        role_list = [ctx.guild.get_role(804036444502753331), ctx.guild.get_role(773123881284272141)]
+        emoji_list = {}
+        animated = []
+        for x in emojis.split(' '):
+            emoji_list[x.split(':')[1]] = x.split(':')[2][:-1]
+            animated.append('y' if x[1] == 'a' else 'n')
+        async with aiohttp.ClientSession() as session:
+            for x in emoji_list:
+                async with session.get(f'https://cdn.discordapp.com/emojis/{emoji_list[x]}.{"gif" if animated.pop(0) == "y" else "png"}') as r:
+                    img = await r.read()
+                    emoji = await ctx.guild.create_custom_emoji(name=x, image=img, roles=role_list, reason=f'#DuckLivesMatter | {ctx.author.name}')
 
     @commands.command()
     @commands.bot_has_permissions(manage_emojis=True)
@@ -137,8 +236,8 @@ class Utility(commands.Cog):
     async def privacy(self, ctx):
         """ View the Privacy Policy """
         embed = discord.Embed(title="Privacy Policy", description=f"By using {self.bot.user.name}, you agree to the following Privacy Policy.\nYou understand that this policy may update at any time, and you continue to agree to it even if you\'re not notified about the changes.", color=discord.Color.blue())
-        embed.add_field(name='What information is stored?', value='We store all server invite codes and their use count.', inline=False)
-        embed.add_field(name='Why we store the information and how we use it.', value='We store this information for invite logging.', inline=False)
+        embed.add_field(name='What information is stored?', value='We store all server invite codes and their use count.\nWe also store all emoji ids sent in the chat and their use count.', inline=False)
+        embed.add_field(name='Why we store the information and how we use it.', value='We store this information for invite logging and emoji statistics.', inline=False)
         embed.add_field(name='Who gets this data?', value='Only bot developers get access to this data.', inline=False)
         embed.add_field(name='Questions and Concerns.', value='If you are concerned about the data stored, please [email us.](https://quacky.xyz/email?email=duck@bduck.xyz)', inline=False)
         embed.add_field(name='How to Remove your data.', value='If you would like us to remove your data, please [email us.](https://quacky.xyz/email?email=duck@bduck.xyz)', inline=False)

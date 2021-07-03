@@ -1,5 +1,6 @@
-import discord, datetime
+import discord, datetime, emoji
 from discord.ext import commands, tasks
+from pymongo.operations import UpdateOne
 
 class Events(commands.Cog):
     def __init__(self, bot):
@@ -20,6 +21,26 @@ class Events(commands.Cog):
                 return True
             return False
         await channel.purge(limit=None, before=(datetime.datetime.now() - datetime.timedelta(days=7)), check=is_pinned)
+
+    @commands.Cog.listener('on_message')
+    async def emoji_stats(self, m):
+        if m.author.bot is True or m.guild is None or m.guild.id != 767344022980132884:
+            return
+        words = m.content.split(' ')
+        emojis_used = []
+        for x in words:
+            if x in emoji.UNICODE_EMOJI['en']:
+                emojis_used.append({"id": x, "animated": False})
+            elif x.startswith(('<:', '<a:')) and x.endswith('>'):
+                emoji_list = x.split(':')
+                if len(emoji_list) == 3 and emoji_list[2][:-1].isdigit():
+                    emojis_used.append({"id": emoji_list[2][:-1], "animated": True if emoji_list[0].__contains__('a') else False})
+
+        if emojis_used != []:
+            update_db = []
+            for a in emojis_used:
+                update_db.append(UpdateOne(dict(a), {"$inc": {"uses": 1}}, upsert=True))
+            await self.bot.db.emojis.bulk_write(update_db)
 
     @commands.Cog.listener()
     async def on_ready(self):
