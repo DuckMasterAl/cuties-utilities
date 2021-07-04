@@ -108,5 +108,15 @@ class Events(commands.Cog):
         channel = self.bot.get_channel(self.logchannel)
         await channel.send(f'The invite **{invite.code}** has been removed or has expired.')
 
+    @commands.Cog.listener()
+    async def on_slash_command_error(self, ctx, error):
+        embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
+        await ctx.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
+        await ctx.send(embed=embed)
+
 def setup(bot):
     bot.add_cog(Events(bot))

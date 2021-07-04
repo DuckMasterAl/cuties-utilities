@@ -1,22 +1,12 @@
-import discord, aiohttp, io, emoji, math, asyncio
+import discord, aiohttp, emoji, math, asyncio
 from discord.ext import commands
-from discord_slash import cog_ext, SlashContext
+from discord_slash import cog_ext
 
 class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
-    async def on_slash_command_error(self, ctx: SlashContext, error):
-        embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
-        await ctx.send(embed=embed)
-
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        embed = discord.Embed(title='You broke it <:foxREE:826881122445033549>', description=str(error), color=discord.Color.red())
-        await ctx.send(embed=embed)
-
-    @commands.command()
+    @commands.command(aliases=['emotelist'])
     async def emojilist(self, ctx):
         emojis = await self.bot.db.emojis.find().to_list(None)
         emojis = sorted(emojis, key=lambda k: k['uses'], reverse=True)
@@ -103,7 +93,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_emojis=True)
     @commands.has_permissions(manage_emojis=True)
     async def steal(self, ctx, *, emojis):
-        role_list = [ctx.guild.get_role(804036444502753331), ctx.guild.get_role(773123881284272141)]
+        role_list = [ctx.guild.get_role(804036444502753331), ctx.guild.get_role(773123881284272141), ctx.guild.get_role(767344063309021196), ctx.guild.get_role(846838233908379650)]
         emoji_list = {}
         animated = []
         for x in emojis.split(' '):
@@ -231,18 +221,6 @@ class Utility(commands.Cog):
                     await ctx.send(embed=embed)
                 else:
                     await ctx.send(f'Something went wrong when trying to get the data! Status code: {r.status}')
-
-    @commands.command()
-    async def privacy(self, ctx):
-        """ View the Privacy Policy """
-        embed = discord.Embed(title="Privacy Policy", description=f"By using {self.bot.user.name}, you agree to the following Privacy Policy.\nYou understand that this policy may update at any time, and you continue to agree to it even if you\'re not notified about the changes.", color=discord.Color.blue())
-        embed.add_field(name='What information is stored?', value='We store all server invite codes and their use count.\nWe also store all emoji ids sent in the chat and their use count.', inline=False)
-        embed.add_field(name='Why we store the information and how we use it.', value='We store this information for invite logging and emoji statistics.', inline=False)
-        embed.add_field(name='Who gets this data?', value='Only bot developers get access to this data.', inline=False)
-        embed.add_field(name='Questions and Concerns.', value='If you are concerned about the data stored, please [email us.](https://quacky.xyz/email?email=duck@bduck.xyz)', inline=False)
-        embed.add_field(name='How to Remove your data.', value='If you would like us to remove your data, please [email us.](https://quacky.xyz/email?email=duck@bduck.xyz)', inline=False)
-        embed.set_footer(text='Last updated on 05/24/2021')
-        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Utility(bot))

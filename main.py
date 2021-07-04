@@ -20,7 +20,7 @@ slash = SlashCommand(client=client, sync_commands=True, override_type=True, sync
 db_client = AsyncIOMotorClient(tokens.mongo)# Mongo
 client.db = db_client.bot
 
-cogs = ['jishaku', 'cogs.utility', 'cogs.events']# Load Cogs (yes this is the simple way)
+cogs = ['jishaku', 'cogs.utility', 'cogs.events', 'cogs.misc']# Load Cogs (yes this is the simple way)
 for x in cogs:
     try:
         client.load_extension(x)
