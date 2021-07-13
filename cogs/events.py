@@ -7,20 +7,18 @@ class Events(commands.Cog):
         self.bot = bot
         self.logchannel = 846837457189208145
         self.guild_id = 767344022980132884
-        self.seriouschat = 848215416702631977
-        self.clear_serious_chat.start()
+        self.ventingchat = 848215416702631977
+        self.seriouschat = 858790285034258438
+        self.clear_serious_chats.start()
 
     def cog_unload(self):
-        self.clear_serious_chat.cancel()
+        self.clear_serious_chats.cancel()
 
     @tasks.loop(hours=1)
-    async def clear_serious_chat(self):
-        channel = self.bot.get_channel(self.seriouschat)
-        def is_pinned(m):
-            if not m.pinned:
-                return True
-            return False
-        await channel.purge(limit=None, before=(datetime.datetime.now() - datetime.timedelta(days=7)), check=is_pinned)
+    async def clear_serious_chats(self):
+        for x in [self.ventingchat, self.seriouschat]:
+            channel = self.bot.get_channel(x)
+            await channel.purge(limit=None, before=(datetime.datetime.now() - datetime.timedelta(days=7)), check=lambda k: not k.pinned)
 
     @commands.Cog.listener('on_message')
     async def emoji_stats(self, m):
@@ -64,11 +62,12 @@ class Events(commands.Cog):
                 if b['code'] == a.code and b['uses'] < a.uses:
                     invite = a
                     break
-        await self.bot.db.invites.find_one_and_update({"code": invite.code}, {"$inc": {"uses": 1}})
+
         channel = self.bot.get_channel(self.logchannel)
         if invite is None:
             await channel.send(f'{member} ({member.mention}) joined through a temporary or vanity invite link.')
         else:
+            await self.bot.db.invites.find_one_and_update({"code": invite.code}, {"$inc": {"uses": 1}})
             await channel.send(f'{member} ({member.mention}) joined through **{invite.code}** made by {invite.inviter} ({invite.inviter.mention})!')
 
     @commands.Cog.listener()
@@ -83,7 +82,8 @@ class Events(commands.Cog):
                 if b['code'] == a.code and b['uses'] > a.uses:
                     invite = a
                     break
-        await self.bot.db.invites.find_one_and_update({"code": invite.code}, {"$inc": {"uses": -1}})
+        if invite is not None:
+            await self.bot.db.invites.find_one_and_update({"code": invite.code}, {"$inc": {"uses": -1}})
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):

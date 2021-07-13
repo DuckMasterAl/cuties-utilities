@@ -30,5 +30,20 @@ class Misc(commands.Cog):
         end = time.perf_counter()
         await message.edit(content=f"{message.content}\n:pencil2: Edit • {round((end - start) * 1000)}ms")
 
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def recache(self, ctx):
+        """ Just a dev command! You can ignore this :p """
+        await ctx.trigger_typing()
+        await self.bot.db.invites.delete_many({})
+        guild = self.bot.get_guild(ctx.guild.id)
+        invites = await guild.invites()
+        insert_to_db = []
+        for x in invites:
+            insert_to_db.append({"code": x.code, "uses": 0})
+        await self.bot.db.invites.insert_many(insert_to_db)
+        await ctx.send("Recached all the invite codes <a:bcaCheerleader:844296747497160736>")
+
 def setup(bot):
     bot.add_cog(Misc(bot))
